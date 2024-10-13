@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GATConv, global_mean_pool
+from torch_geometric.nn import GATConv, global_add_pool
 
 #TODO: comment
 
@@ -22,7 +22,7 @@ class SuperPixelGNN(nn.Module):
 
         concat_out = torch.concat((out1, out2, out3, out4), dim=1)
 
-        x = global_mean_pool(concat_out, batch)
+        x = global_add_pool(concat_out, batch)
 
         return x
 
@@ -35,8 +35,10 @@ class ClassifierHead(nn.Module):
         self.fc1 = nn.Linear(embedding_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, output_size)
 
-    def forward(self, x):
+    def forward(self, x, edge_index, batch):
+        x = self.gnn(x, edge_index, batch)
+
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         
-        return F.softmax(x)
+        return x
