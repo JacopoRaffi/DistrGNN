@@ -4,10 +4,12 @@ import torch.nn.functional as F
 from torch_geometric.nn import GATConv, global_add_pool
 
 #TODO: comment
+#TODO: add superpixel part
 
 class SuperPixelGNN(nn.Module):
     def __init__(self):
         super(SuperPixelGNN, self).__init__()
+        # The hyperparameters are the same as the ones used in the original paper
 
         self.conv1 = GATConv(3, 320, heads=1)
         self.conv2 = GATConv(320, 320, heads=1)
@@ -21,8 +23,7 @@ class SuperPixelGNN(nn.Module):
         out4 = F.relu(self.conv4(out3 + out1, edge_index))
 
         concat_out = torch.concat((out1, out2, out3, out4), dim=1)
-
-        x = global_add_pool(concat_out, batch)
+        x = global_add_pool(concat_out, batch) 
 
         return x
 
@@ -41,4 +42,5 @@ class ClassifierHead(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         
-        return x
+        # return the unnormalized logits (multiclassification task)
+        return x 
