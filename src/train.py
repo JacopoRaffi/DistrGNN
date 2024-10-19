@@ -6,63 +6,96 @@ import csv
 from torch_geometric.loader import DataLoader
 
 from model import ClassifierHead
-from data import CifarDataset, image_to_graph
+from data import CustomDataset, image_to_graph
 
-#TODO: comment and test, add performance metrics (write to csv)
-#TODO: change the 'print time' to 'log time' and write to a csv file (save data in list and then write to csv), so to avoid file writing overhead
 #TODO: add also memory usage logging, use torch profile function
 
 def train(model, optimizer, criterion, train_loader, val_loader, epoch, device):
-    start_training_time = time.time() * 1000
-    for epoch in range(epoch):
-        epoch_start_time = time.time() * 1000
-        model.train()
-        total_loss = 0
-        mean_batch_time = 0
-        for data in train_loader:
-            start_batch_time = time.time() * 1000
-            data = data.to(device)
+    '''
+    Train the model and compute the performance metrics
 
-            optimizer.zero_grad()
-            output = model(data.x, data.edge_index, data.batch)
-            
-            loss = criterion(output, data.y)
-            loss.backward()
-            
-            optimizer.step()
-            total_loss += loss.item()
-            end_batch_time = time.time() * 1000
-            mean_batch_time += end_batch_time - start_batch_time
-        print(f'Mean batch time: {mean_batch_time / len(train_loader)} ms')
+    Parameters:
+    ----------
+    model: torch.nn.Module
+        Model to train
+    optimizer: torch.optim.Optimizer
+        Optimizer to use
+    criterion: torch.nn.Module
+        Loss function
+    train_loader: torch_geometric.loader.DataLoader
+        DataLoader for training
+    val_loader: torch_geometric.loader.DataLoader
+        DataLoader for validation (test)
+    epoch: int
+        Number of epochs
+    device: torch.device
+        Device to use
         
-        epoch_end_time = time.time() * 1000
-        print(f'Epoch time: {epoch_end_time - epoch_start_time} ms')
-        print(f'Epoch: {epoch}, Train Loss: {total_loss / len(train_loader)}')
-        model.eval()
 
-        with torch.no_grad():
+    Returns:
+    -------
+    return: None
+    '''
+
+    # Log the training and validation (test) time
+    with open('log.csv', 'w+') as log_file: 
+        csv_writer = csv.writer(log_file)
+        header = ['epoch', 'batch', 'batch_time(s)', 'phase'] # Phase: 0 - train, 1 - val
+        csv_writer.writerow(header)
+        log_file.flush()
+
+        for epoch in range(epoch):
+            model.train()
             total_loss = 0
-            mean_val_batch_time = 0
-            for data in val_loader:
-                start_val_batch_time = time.time() * 1000
+            for i, data in enumerate(train_loader):
+                csv_row = []
+                csv_row.append(epoch)
+                csv_row.append(i)
+                
+                start_batch_time = time.time()
+                
                 data = data.to(device)
+                optimizer.zero_grad()
                 output = model(data.x, data.edge_index, data.batch)
                 loss = criterion(output, data.y)
+                loss.backward()
+                optimizer.step()
                 total_loss += loss.item()
-                end_val_batch_time = time.time() * 1000
-                mean_val_batch_time += end_val_batch_time - start_val_batch_time
-            print(f'Mean val batch time: {mean_val_batch_time / len(val_loader)} ms')
+                
+                end_batch_time = time.time()
+                
+                csv_row.append(end_batch_time - start_batch_time)
+                csv_row.append(0)
+                csv_writer.writerow(csv_row) # The row contains the epoch_id, the batch_id, the time spent in the batch and the phase
+            
+            model.eval()
+            with torch.no_grad():
+                total_loss = 0
+                for i, data in enumerate(val_loader):
+                    csv_row = []
+                    csv_row.append(epoch)
+                    csv_row.append(i)
+                    
+                    start_batch_time = time.time()
+                    
+                    data = data.to(device)
+                    output = model(data.x, data.edge_index, data.batch)
+                    loss = criterion(output, data.y)
+                    total_loss += loss.item()
+                    
+                    end_batch_time = time.time()
 
-            print(f'Epoch: {epoch}, Val Loss: {total_loss / len(val_loader)}')
+                    csv_row.append(end_batch_time - start_batch_time)
+                    csv_row.append(1)
+                    csv_writer.writerow(csv_row)
 
-    end_training_time = time.time() * 1000
-    print(f'Full Training time: {end_training_time - start_training_time} ms')
-    return total_loss / len(train_loader)
+            log_file.flush()
 
 
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    gnn = ClassifierHead(1280, 512, 10).to(device)
+    gnn = ClassifierHead(1280, 512, 10)
+    gnn = torch.jit.script(gnn).to(device)
     optimizer = torch.optim.Adam(gnn.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -71,8 +104,8 @@ if __name__ == '__main__':
     train_dataset = CIFAR10(root='../data', train=True, download=False, transform=transform)
     test_dataset = CIFAR10(root='../data', train=False, download=False, transform=transform)
 
-    train_dataset = CifarDataset(image_to_graph(train_dataset))
-    test_dataset = CifarDataset(image_to_graph(test_dataset))
+    train_dataset = CustomDataset(image_to_graph(train_dataset))
+    test_dataset = CustomDataset(image_to_graph(test_dataset))
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
