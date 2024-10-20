@@ -94,20 +94,20 @@ def train(model, optimizer, criterion, train_loader, val_loader, epoch, device):
 
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    gnn = ClassifierHead(1280, 512, 10)
-    gnn = torch.jit.script(gnn).to(device)
+    gnn = ClassifierHead(1280, 512, 10).to(device)
+    #gnn = torch.jit.script(gnn).to(device)
     optimizer = torch.optim.Adam(gnn.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
 
-    transform = T.ToTensor()
+    transform = T.ToTensor() #TODO: add the super pixel part
 
     train_dataset = CIFAR10(root='../data', train=True, download=False, transform=transform)
     test_dataset = CIFAR10(root='../data', train=False, download=False, transform=transform)
 
-    train_dataset = CustomDataset(image_to_graph(train_dataset))
-    test_dataset = CustomDataset(image_to_graph(test_dataset))
+    train_dataset = CustomDataset(image_to_graph(train_dataset), length=0)
+    test_dataset = CustomDataset(image_to_graph(test_dataset), length=0)
 
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    val_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=1000, shuffle=True)
+    val_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False)
 
     train(gnn, optimizer, criterion, train_loader, val_loader, 10, device)
