@@ -2,6 +2,7 @@ from torchvision.datasets import CIFAR10
 import torchvision.transforms as T
 import torch
 import time
+import argparse
 import csv
 from torch_geometric.loader import DataLoader
 
@@ -10,7 +11,7 @@ from data import CustomDataset, image_to_graph
 
 #TODO: add also memory usage logging, use torch profile function
 
-def train(model, optimizer, criterion, train_loader, val_loader, epoch, device):
+def train(model, optimizer, criterion, train_loader, val_loader, epoch, device, filename):
     '''
     Train the model and compute the performance metrics
 
@@ -30,6 +31,8 @@ def train(model, optimizer, criterion, train_loader, val_loader, epoch, device):
         Number of epochs
     device: torch.device
         Device to use
+    filename: str
+        Name of the log file where to store time metrics
         
 
     Returns:
@@ -38,7 +41,7 @@ def train(model, optimizer, criterion, train_loader, val_loader, epoch, device):
     '''
 
     # Log the training and validation (test) time
-    with open('log.csv', 'w+') as log_file: 
+    with open(filename, 'w+') as log_file: 
         csv_writer = csv.writer(log_file)
         header = ['epoch', 'batch', 'batch_time(s)', 'phase'] # Phase: 0 - train, 1 - val
         csv_writer.writerow(header)
@@ -93,6 +96,10 @@ def train(model, optimizer, criterion, train_loader, val_loader, epoch, device):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--filename', type=str, help='Name of the log file')
+    args = parser.parse_args()
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     gnn = ClassifierHead(1280, 512, 10).to(device)
     #gnn = torch.jit.script(gnn).to(device)
@@ -110,4 +117,4 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_dataset, batch_size=1000, shuffle=True)
     val_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False)
 
-    train(gnn, optimizer, criterion, train_loader, val_loader, 10, device)
+    train(gnn, optimizer, criterion, train_loader, val_loader, 10, device, args.filename)
