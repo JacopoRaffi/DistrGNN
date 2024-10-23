@@ -97,16 +97,13 @@ def train(model, optimizer, criterion, train_loader, val_loader, epoch, device, 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--filename', type=str, help='Name of the log file')
-    parser.add_argument('--pipeline', action=argparse.BooleanOptionalAction)
+    parser.add_argument('--filename', type=str, help='Name of the log file', default='tmp.csv')
+    parser.add_argument('-l', type=int, help='Length of the dataset to consider', default=0)
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    if args.pipeline:
-        gnn = Classifier(1280, 512, 10).to(device) #TODO: substitute with the pipeline model
-    else:
-        gnn = Classifier(1280, 512, 10).to(device)
+    gnn = Classifier(1280, 512, 10).to(device)
     #gnn = torch.jit.script(gnn).to(device)
     optimizer = torch.optim.Adam(gnn.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
@@ -116,10 +113,10 @@ if __name__ == '__main__':
     train_dataset = CIFAR10(root='../data', train=True, download=False, transform=transform)
     test_dataset = CIFAR10(root='../data', train=False, download=False, transform=transform)
 
-    train_dataset = CustomDataset(image_to_graph(train_dataset), length=0)
-    test_dataset = CustomDataset(image_to_graph(test_dataset), length=0)
+    train_dataset = CustomDataset(image_to_graph(train_dataset), length=100)
+    test_dataset = CustomDataset(image_to_graph(test_dataset), length=100)
 
-    train_loader = DataLoader(train_dataset, batch_size=1000, shuffle=True)
-    val_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=50, shuffle=True)
+    val_loader = DataLoader(test_dataset, batch_size=50, shuffle=False)
 
     train(gnn, optimizer, criterion, train_loader, val_loader, 5, device, args.filename)
