@@ -36,9 +36,9 @@ class HGNN(nn.Module):
 
         return x
 
-class ClassifierHead(nn.Module):
+class Classifier(nn.Module):
     '''
-    ClassifierHead is the classifier head of the HGNN model. It takes the graph embedding as input and outputs the logits for each class.
+    Classifier is the classifier head of the HGNN model. It takes the graph embedding as input and outputs the logits for each class.
 
     Attributes:
     ----------
@@ -48,7 +48,7 @@ class ClassifierHead(nn.Module):
         Fully connected layer i
     '''
     def __init__(self, embedding_size, hidden_size, output_size):
-        super(ClassifierHead, self).__init__()
+        super(Classifier, self).__init__()
 
         self.gnn = HGNN()
 
@@ -63,3 +63,5 @@ class ClassifierHead(nn.Module):
         
         # return the unnormalized logits (multiclassification task)
         return x 
+    
+# ----------------------------------------------------------------- Pipeline Model -----------------------------------------------------------------

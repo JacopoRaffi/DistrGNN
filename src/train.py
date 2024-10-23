@@ -6,7 +6,7 @@ import argparse
 import csv
 from torch_geometric.loader import DataLoader
 
-from model import ClassifierHead
+from model import Classifier
 from data import CustomDataset, image_to_graph
 
 #TODO: add also memory usage logging, use torch profile function
@@ -98,10 +98,15 @@ def train(model, optimizer, criterion, train_loader, val_loader, epoch, device, 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--filename', type=str, help='Name of the log file')
+    parser.add_argument('--pipeline', action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    gnn = ClassifierHead(1280, 512, 10).to(device)
+
+    if args.pipeline:
+        gnn = Classifier(1280, 512, 10).to(device) #TODO: substitute with the pipeline model
+    else:
+        gnn = Classifier(1280, 512, 10).to(device)
     #gnn = torch.jit.script(gnn).to(device)
     optimizer = torch.optim.Adam(gnn.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
