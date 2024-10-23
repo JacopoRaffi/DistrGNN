@@ -122,4 +122,4 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_dataset, batch_size=1000, shuffle=True)
     val_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False)
 
-    train(gnn, optimizer, criterion, train_loader, val_loader, 10, device, args.filename)
+    train(gnn, optimizer, criterion, train_loader, val_loader, 5, device, args.filename)
