@@ -12,8 +12,8 @@ from data import CustomDataset, image_to_graph
 
 transform = T.ToTensor()
 train_dataset = CIFAR10(root='../data', train=True, download=False, transform=transform)
-dataset = CustomDataset(image_to_graph(train_dataset), length=150)
-loader = DataLoader(dataset, batch_size=50, shuffle=True)
+dataset = CustomDataset(image_to_graph(train_dataset), length=0)
+loader = DataLoader(dataset, batch_size=1000, shuffle=True)
 
 gat_1 = GATConv(3, 320, heads=1)
 gat_2 = GATConv(320, 320, heads=1)
@@ -24,7 +24,7 @@ df_empty ={'layer' : [],
             'time(s)' : []}
 
 iterator = iter(loader)
-N = 3
+N = 10
 
 for i in range(N):
     data = next(iterator)
