@@ -14,9 +14,11 @@ class HGNN(nn.Module):
     ----------
     convi: torch_geometric.nn.GATConv
         GATConv layer i 
+    fci: torch.nn.Linear
+        Fully connected layer i
     '''
     
-    def __init__(self):
+    def __init__(self, embedding_size, hidden_size, output_size):
         super(HGNN, self).__init__()
 
         # The hyperparameters are the same as the ones used in the original paper
@@ -24,6 +26,9 @@ class HGNN(nn.Module):
         self.conv2 = GATConv(320, 320, heads=1)
         self.conv3 = GATConv(320, 320, heads=1)
         self.conv4 = GATConv(320, 320, heads=1)
+
+        self.fc1 = nn.Linear(embedding_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, edge_index, batch):
         out1 = F.relu(self.conv1(x, edge_index))
@@ -34,34 +39,7 @@ class HGNN(nn.Module):
         concat_out = torch.concat((out1, out2, out3, out4), dim=1)
         x = global_add_pool(concat_out, batch) # compute the graph embedding
 
-        return x
-
-class Classifier(nn.Module):
-    '''
-    Classifier is the classifier head of the HGNN model. It takes the graph embedding as input and outputs the logits for each class.
-
-    Attributes:
-    ----------
-    gnn: HGNN
-        The hierarchical graph neural network model
-    fci: torch.nn.Linear
-        Fully connected layer i
-    '''
-    def __init__(self, embedding_size, hidden_size, output_size):
-        super(Classifier, self).__init__()
-
-        self.gnn = HGNN()
-
-        self.fc1 = nn.Linear(embedding_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x, edge_index, batch):
-        x = self.gnn(x, edge_index, batch)
-
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        
-        # return the unnormalized logits (multiclassification task)
-        return x 
-    
-# ----------------------------------------------------------------- Pipeline Model -----------------------------------------------------------------
+
+        return x
