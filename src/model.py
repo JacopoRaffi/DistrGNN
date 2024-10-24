@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GATConv, global_add_pool
 
-#TODO: add superpixel part
-
 class HGNN(nn.Module):
     '''
     Implementation of the Hierarchical Graph Neural Network (HGNN) model from
@@ -37,9 +35,9 @@ class HGNN(nn.Module):
         out4 = F.relu(self.conv4(out3 + out1, edge_index))
 
         concat_out = torch.concat((out1, out2, out3, out4), dim=1)
-        x = global_add_pool(concat_out, batch) # compute the graph embedding
+        graph_embedding = global_add_pool(concat_out, batch) # compute the graph embedding
 
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
+        graph_embedding = F.relu(self.fc1(graph_embedding))
+        graph_embedding = self.fc2(graph_embedding)
 
-        return x
+        return graph_embedding

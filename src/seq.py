@@ -6,7 +6,7 @@ import argparse
 import csv
 from torch_geometric.loader import DataLoader
 
-from model import Classifier
+from model import HGNN
 from data import CustomDataset, image_to_graph
 
 #TODO: add also memory usage logging, use torch profile function
@@ -103,8 +103,7 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    gnn = Classifier(1280, 512, 10).to(device)
-    #gnn = torch.jit.script(gnn).to(device)
+    gnn = HGNN(1280, 512, 10).to(device)
     optimizer = torch.optim.Adam(gnn.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -113,8 +112,8 @@ if __name__ == '__main__':
     train_dataset = CIFAR10(root='../data', train=True, download=False, transform=transform)
     test_dataset = CIFAR10(root='../data', train=False, download=False, transform=transform)
 
-    train_dataset = CustomDataset(image_to_graph(train_dataset), length=100)
-    test_dataset = CustomDataset(image_to_graph(test_dataset), length=100)
+    train_dataset = CustomDataset(image_to_graph(train_dataset), length=args.l)
+    test_dataset = CustomDataset(image_to_graph(test_dataset), length=args.l)
 
     train_loader = DataLoader(train_dataset, batch_size=50, shuffle=True)
     val_loader = DataLoader(test_dataset, batch_size=50, shuffle=False)
